@@ -12,13 +12,16 @@
 </head>
 <body style="height: 100%;width: 100%;margin: 0;">
     <div style="height:50px; width: 100%;">
-        <p>Annuaire Selectionné: <%= request.getParameter("annuaireName") %></p>
+        <p>Annuaire Selectionné: <%= request.getAttribute("annuaireName") %></p>
     </div>
     <div style="height: calc( 100% - 50px ); width: 100%; background-color:gray;">
-        <form>
-            <select size="<%= request.getAttribute("annuairesSize") %>" name="listAnnuaire">
+        <form action="listAnnuaire" method="POST">
+            <select size="<%= request.getAttribute("annuairesSize") %>" name="annuaire">
                 <%= request.getAttribute("annuairesOptions") %>
             </select>
+            <br>
+            <br>
+            <input type="submit" name="action:Selection" value="Sélectionner répertoire"/>
         </form>
     </div>
 </body>
