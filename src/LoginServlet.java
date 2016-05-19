@@ -5,13 +5,11 @@ import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebInitParam;
 import javax.servlet.annotation.WebServlet;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.*;
 import java.io.IOException;
 
 @WebServlet(name = "login", urlPatterns = {"/Login"}, loadOnStartup = 1, initParams = {@WebInitParam(name = "host", value = "localhost"), @WebInitParam(name = "port", value = "8000")})
-public class Login extends HttpServlet {
+public class LoginServlet extends HttpServlet {
 
     protected String host;
     protected Integer port;
@@ -39,6 +37,10 @@ public class Login extends HttpServlet {
         request.setAttribute("port", this.port);
         try {
             this.client.connect(request.getParameter("identifiant"), request.getParameter("password"));
+            HttpSession session = request.getSession(true);
+            session.setAttribute("client", this.client);
+            session.setAttribute("user", request.getParameter("identifiant"));
+            //response.addCookie(new Cookie("SessionCAR", session.getId()));
             this.getServletContext().getRequestDispatcher("/WebPages/LoggedPage.jsp").forward(request, response);
         } catch (WrongInformationException e) {
             request.setAttribute("Error", "<p> Wrong informations </p>");

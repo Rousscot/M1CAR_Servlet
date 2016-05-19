@@ -9,10 +9,10 @@
 <!doctype html public "-//w3c//dtd html 4.0 transitional//en">
 <html>
 <head>
-    <title> Login </title>
+    <title> LoginServlet </title>
 </head>
 <body bgcolor="#f0f0f0">
-<h1 align="center"> Login </h1>
+<h1 align="center"> LoginServlet </h1>
 <h2> Host and port: <%= request.getAttribute("host") %> : <%= request.getAttribute("port") %> </h2>
 <%= request.getAttribute("Error") %>
 <form action="Login" method="POST">
