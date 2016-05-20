@@ -1,5 +1,4 @@
 import client.Client;
-import client.ClientRepertoireList;
 import server.ServerRepertoire;
 
 import javax.servlet.ServletException;
@@ -12,45 +11,30 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.BiConsumer;
 
-@WebServlet(name = "listAnnuaire", urlPatterns = {"/listAnnuaire"})
-public class ListeAnnuaireServlet extends HttpServlet {
+@WebServlet(name = "annuaire", urlPatterns = {"/annuaire"})
+public class AnnuaireServlet extends HttpServlet {
 
     protected Client client;
-    protected String nameRep;
-    protected String[] repertoires;
+    protected ServerRepertoire repertoire;
+    protected String nameEntry;
+    protected String[] entries;
     protected Map<String, BiConsumer<HttpServletRequest, HttpServletResponse>> commands;
 
     @Override
     public void init() throws ServletException {
         super.init();
         this.commands = new HashMap<>();
-        this.commands.put("Selection", (HttpServletRequest request, HttpServletResponse response) -> {
-            this.nameRep = this.repertoires[Integer.valueOf(request.getParameter("annuaire"))];
-            this.launchPage(request, response);
-        });
-        this.commands.put("Add", (HttpServletRequest request, HttpServletResponse response) -> {
-            this.getClientRepertoires().ajouterRepertoire(new ServerRepertoire(request.getParameter("annuaireName")));
-            this.launchPage(request, response);
-        });
-        this.commands.put("Delete", (HttpServletRequest request, HttpServletResponse response) -> {
-            this.getClientRepertoires().retirerRepertoire(this.nameRep);
-            this.selectFirstRep();
-            this.launchPage(request, response);
-        });
         this.commands.put("Access", (HttpServletRequest request, HttpServletResponse response) -> {
-            this.getClientRepertoires().accederRepertoire(this.nameRep);
-            request.setAttribute("nameRep", this.nameRep);
-            try {
-                this.getServletContext().getRequestDispatcher("/annuaire").forward(request, response);
-            } catch (IOException | ServletException e) {
-                e.printStackTrace(); //TODO
-            }
+            this.client = (Client) request.getSession(false).getAttribute("client");
+            this.repertoire = this.client.getRepertoires().chercherRepertoire((String) request.getAttribute("nameRep"));
+            this.selectFirstEntry();
+            this.launchPage(request, response);
         });
     }
 
     public String createOptions() {
         StringBuilder sb = new StringBuilder();
-        for (Integer i = 0; i < this.repertoires.length; i++) {
+        for (Integer i = 0; i < this.entries.length; i++) {
             sb.append("<option value=\"");
             sb.append(i.toString());
             sb.append("\"");
@@ -58,30 +42,23 @@ public class ListeAnnuaireServlet extends HttpServlet {
                 sb.append(" selected=\"true\"");
             }
             sb.append(">");
-            sb.append(this.repertoires[i]);
+            sb.append(this.entries[i]);
             sb.append("</option>\n");
         }
         return sb.toString();
     }
 
-    @Override
-    public void doGet(HttpServletRequest request, HttpServletResponse response) {
-        this.client = (Client) request.getSession(false).getAttribute("client");
-        this.selectFirstRep();
-        this.launchPage(request, response);
-    }
-
-    public void selectFirstRep() {
-        this.repertoires = client.getRepertoires().listerRepertoires();
-        if (this.repertoires.length > 0) {
-            this.nameRep = this.repertoires[0];
+    public void selectFirstEntry() {
+        this.entries = this.repertoire.listerPersonnes();
+        if (this.entries.length > 0) {
+            this.nameEntry = this.entries[0];
         }
     }
 
     public void launchPage(HttpServletRequest request, HttpServletResponse response){
-        this.repertoires = client.getRepertoires().listerRepertoires();
-        request.setAttribute("annuaireName", this.nameRep);
-        request.setAttribute("annuairesSize", this.repertoires.length);
+        this.entries = this.repertoire.listerPersonnes();
+        request.setAttribute("annuaireName", this.nameEntry);
+        request.setAttribute("annuairesSize", this.entries.length);
         request.setAttribute("annuairesOptions", this.createOptions());
         try {
             this.getServletContext().getRequestDispatcher("/WebPages/ListAnnuairePage.jsp").forward(request, response);
@@ -106,10 +83,6 @@ public class ListeAnnuaireServlet extends HttpServlet {
             }
         }
         throw new IndexOutOfBoundsException();
-    }
-
-    public ClientRepertoireList getClientRepertoires(){
-        return this.client.getRepertoires();
     }
 
 }
