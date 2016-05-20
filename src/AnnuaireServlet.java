@@ -1,4 +1,5 @@
 import client.Client;
+import repertoire.Personne;
 import server.ServerRepertoire;
 
 import javax.servlet.ServletException;
@@ -14,7 +15,6 @@ import java.util.function.BiConsumer;
 @WebServlet(name = "annuaire", urlPatterns = {"/annuaire"})
 public class AnnuaireServlet extends HttpServlet {
 
-    protected Client client;
     protected ServerRepertoire repertoire;
     protected String nameEntry;
     protected String[] entries;
@@ -25,11 +25,36 @@ public class AnnuaireServlet extends HttpServlet {
         super.init();
         this.commands = new HashMap<>();
         this.commands.put("Access", (HttpServletRequest request, HttpServletResponse response) -> {
-            this.client = (Client) request.getSession(false).getAttribute("client");
-            this.repertoire = this.client.getRepertoires().chercherRepertoire((String) request.getAttribute("nameRep"));
+            this.repertoire = ((Client) request.getSession(false).getAttribute("client")).getRepertoires().chercherRepertoire((String) request.getAttribute("annuaireName"));
             this.selectFirstEntry();
             this.launchPage(request, response);
         });
+        this.commands.put("Selection", (HttpServletRequest request, HttpServletResponse response) -> {
+            this.nameEntry = this.entries[Integer.valueOf(request.getParameter("entry"))];
+            this.launchPage(request, response);
+        });
+        this.commands.put("Delete", (HttpServletRequest request, HttpServletResponse response) -> {
+            this.repertoire.retirerPersonne(this.nameEntry);
+            this.selectFirstEntry();
+            this.launchPage(request, response);
+        });
+        this.commands.put("Add", (HttpServletRequest request, HttpServletResponse response) -> {
+            String name = request.getParameter("name");
+            String email = request.getParameter("email");
+            String url = request.getParameter("url");
+            String descr = request.getParameter("descr");
+            this.repertoire.ajouterPersonne(new Personne(name, email, url, descr));
+            this.launchPage(request, response);
+        });
+        this.commands.put("Update", (HttpServletRequest request, HttpServletResponse response) -> {
+            String name = request.getParameter("name");
+            String email = request.getParameter("email");
+            String url = request.getParameter("url");
+            String descr = request.getParameter("descr");
+            this.repertoire.modifierPersonne(new Personne(name, email, url, descr));
+            this.launchPage(request, response);
+        });
+
     }
 
     public String createOptions() {
@@ -57,11 +82,22 @@ public class AnnuaireServlet extends HttpServlet {
 
     public void launchPage(HttpServletRequest request, HttpServletResponse response){
         this.entries = this.repertoire.listerPersonnes();
-        request.setAttribute("annuaireName", this.nameEntry);
-        request.setAttribute("annuairesSize", this.entries.length);
-        request.setAttribute("annuairesOptions", this.createOptions());
+        if(this.nameEntry == null){
+            request.setAttribute("email", "");
+            request.setAttribute("url",  "");
+            request.setAttribute("descr",  "");
+            request.setAttribute("entryName",  "No entry selected");
+        } else {
+            Personne entry = this.repertoire.chercherPersonne(this.nameEntry);
+            request.setAttribute("email", entry.getEmail());
+            request.setAttribute("url", entry.getUrl());
+            request.setAttribute("descr", entry.getInfo());
+            request.setAttribute("entryName", this.nameEntry);
+        }
+        request.setAttribute("entriesSize", this.entries.length);
+        request.setAttribute("entryOptions", this.createOptions());
         try {
-            this.getServletContext().getRequestDispatcher("/WebPages/ListAnnuairePage.jsp").forward(request, response);
+            this.getServletContext().getRequestDispatcher("/WebPages/RepertoirePage.jsp").forward(request, response);
         } catch (IOException | ServletException e) {
             e.printStackTrace();//TODO write in response that the request did not succeeded and why. Change the status
         }

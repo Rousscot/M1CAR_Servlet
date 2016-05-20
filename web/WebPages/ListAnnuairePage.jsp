@@ -12,7 +12,7 @@
 </head>
 <body style="height: 100%;width: 100%;margin: 0;">
 <div style="height:50px; width: 100%;">
-    <p>Annuaire Selectionné: <%= request.getAttribute("annuaireName") %>
+    <p>Annuaire sélectionné: <%= request.getAttribute("annuaireName") %>
     </p>
 </div>
 <div style="height: calc( 100% - 50px ); width: 100%; background-color:gray;">
