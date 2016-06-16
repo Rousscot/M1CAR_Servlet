@@ -4,41 +4,36 @@ import server.ServerRepertoire;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
-import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.function.BiConsumer;
 
 @WebServlet(name = "annuaire", urlPatterns = {"/annuaire"})
-public class AnnuaireServlet extends HttpServlet {
+public class AnnuaireServlet extends AbstractServlet {
 
     protected ServerRepertoire repertoire;
     protected String nameEntry;
     protected String[] entries;
-    protected Map<String, BiConsumer<HttpServletRequest, HttpServletResponse>> commands;
 
     @Override
-    public void init() throws ServletException {
-        super.init();
-        this.commands = new HashMap<>();
-        this.commands.put("Access", (HttpServletRequest request, HttpServletResponse response) -> {
+    public void initPostCommands(Map<String, BiConsumer<HttpServletRequest, HttpServletResponse>> map) {
+        map.put("Access", (HttpServletRequest request, HttpServletResponse response) -> {
             this.repertoire = ((Client) request.getSession(false).getAttribute("client")).getRepertoires().chercherRepertoire((String) request.getAttribute("annuaireName"));
             this.selectFirstEntry();
             this.launchPage(request, response);
         });
-        this.commands.put("Selection", (HttpServletRequest request, HttpServletResponse response) -> {
+        map.put("Selection", (HttpServletRequest request, HttpServletResponse response) -> {
             this.nameEntry = this.entries[Integer.valueOf(request.getParameter("entry"))];
             this.launchPage(request, response);
         });
-        this.commands.put("Delete", (HttpServletRequest request, HttpServletResponse response) -> {
+        map.put("Delete", (HttpServletRequest request, HttpServletResponse response) -> {
             this.repertoire.retirerPersonne(this.nameEntry);
             this.selectFirstEntry();
             this.launchPage(request, response);
         });
-        this.commands.put("Add", (HttpServletRequest request, HttpServletResponse response) -> {
+        map.put("Add", (HttpServletRequest request, HttpServletResponse response) -> {
             String name = request.getParameter("name");
             String email = request.getParameter("email");
             String url = request.getParameter("url");
@@ -46,7 +41,7 @@ public class AnnuaireServlet extends HttpServlet {
             this.repertoire.ajouterPersonne(new Personne(name, email, url, descr));
             this.launchPage(request, response);
         });
-        this.commands.put("Update", (HttpServletRequest request, HttpServletResponse response) -> {
+        map.put("Update", (HttpServletRequest request, HttpServletResponse response) -> {
             String name = request.getParameter("name");
             String email = request.getParameter("email");
             String url = request.getParameter("url");
@@ -54,9 +49,13 @@ public class AnnuaireServlet extends HttpServlet {
             this.repertoire.modifierPersonne(new Personne(name, email, url, descr));
             this.launchPage(request, response);
         });
-
     }
 
+    /**
+     * I will create a list of options that should be used by the presentation.
+     * This list will contains all the entries I have.
+     * @return The HTML template of the list.
+     */
     public String createOptions() {
         StringBuilder sb = new StringBuilder();
         for (Integer i = 0; i < this.entries.length; i++) {
@@ -80,13 +79,14 @@ public class AnnuaireServlet extends HttpServlet {
         }
     }
 
-    public void launchPage(HttpServletRequest request, HttpServletResponse response){
+    @Override
+    public void launchPage(HttpServletRequest request, HttpServletResponse response) {
         this.entries = this.repertoire.listerPersonnes();
-        if(this.nameEntry == null){
+        if (this.nameEntry == null) {
             request.setAttribute("email", "");
-            request.setAttribute("url",  "");
-            request.setAttribute("descr",  "");
-            request.setAttribute("entryName",  "No entry selected");
+            request.setAttribute("url", "");
+            request.setAttribute("descr", "");
+            request.setAttribute("entryName", "No entry selected");
         } else {
             Personne entry = this.repertoire.chercherPersonne(this.nameEntry);
             request.setAttribute("email", entry.getEmail());
@@ -102,23 +102,4 @@ public class AnnuaireServlet extends HttpServlet {
             e.printStackTrace();//TODO write in response that the request did not succeeded and why. Change the status
         }
     }
-
-    @Override
-    public void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        this.commands.getOrDefault(this.getActionName(request), defaultClosureForError()).accept(request, response);
-    }
-
-    public BiConsumer<HttpServletRequest, HttpServletResponse> defaultClosureForError() {
-        return this::launchPage;
-    }
-
-    public String getActionName(HttpServletRequest request) {
-        for (String value : request.getParameterMap().keySet()) {
-            if (value.startsWith("action:")) {
-                return value.split(":")[1];
-            }
-        }
-        throw new IndexOutOfBoundsException();
-    }
-
 }

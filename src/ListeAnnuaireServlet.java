@@ -4,40 +4,35 @@ import server.ServerRepertoire;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
-import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.function.BiConsumer;
 
 @WebServlet(name = "listAnnuaire", urlPatterns = {"/listAnnuaire"})
-public class ListeAnnuaireServlet extends HttpServlet {
+public class ListeAnnuaireServlet extends AbstractServlet {
 
     protected ClientRepertoireList repertoireList;
     protected String nameRep;
     protected String[] repertoires;
-    protected Map<String, BiConsumer<HttpServletRequest, HttpServletResponse>> commands;
 
     @Override
-    public void init() throws ServletException {
-        super.init();
-        this.commands = new HashMap<>();
-        this.commands.put("Selection", (HttpServletRequest request, HttpServletResponse response) -> {
+    public void initPostCommands(Map<String, BiConsumer<HttpServletRequest, HttpServletResponse>> map) {
+        map.put("Selection", (HttpServletRequest request, HttpServletResponse response) -> {
             this.nameRep = this.repertoires[Integer.valueOf(request.getParameter("annuaire"))];
             this.launchPage(request, response);
         });
-        this.commands.put("Add", (HttpServletRequest request, HttpServletResponse response) -> {
+        map.put("Add", (HttpServletRequest request, HttpServletResponse response) -> {
             this.repertoireList.ajouterRepertoire(new ServerRepertoire(request.getParameter("annuaireName")));
             this.launchPage(request, response);
         });
-        this.commands.put("Delete", (HttpServletRequest request, HttpServletResponse response) -> {
+        map.put("Delete", (HttpServletRequest request, HttpServletResponse response) -> {
             this.repertoireList.retirerRepertoire(this.nameRep);
             this.selectFirstRep();
             this.launchPage(request, response);
         });
-        this.commands.put("Access", (HttpServletRequest request, HttpServletResponse response) -> {
+        map.put("Access", (HttpServletRequest request, HttpServletResponse response) -> {
             this.repertoireList.accederRepertoire(this.nameRep);
             request.setAttribute("annuaireName", this.nameRep);
             try {
@@ -48,6 +43,11 @@ public class ListeAnnuaireServlet extends HttpServlet {
         });
     }
 
+    /**
+     * I will create a list of options that should be used by the presentation.
+     * This list will contains all the repertoires I have.
+     * @return The HTML template of the list.
+     */
     public String createOptions() {
         StringBuilder sb = new StringBuilder();
         for (Integer i = 0; i < this.repertoires.length; i++) {
@@ -78,7 +78,7 @@ public class ListeAnnuaireServlet extends HttpServlet {
         }
     }
 
-    public void launchPage(HttpServletRequest request, HttpServletResponse response){
+    public void launchPage(HttpServletRequest request, HttpServletResponse response) {
         this.repertoires = this.repertoireList.listerRepertoires();
         request.setAttribute("annuaireName", this.nameRep);
         request.setAttribute("annuairesSize", this.repertoires.length);
@@ -89,23 +89,4 @@ public class ListeAnnuaireServlet extends HttpServlet {
             e.printStackTrace();//TODO write in response that the request did not succeeded and why. Change the status
         }
     }
-
-    @Override
-    public void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        this.commands.getOrDefault(this.getActionName(request), defaultClosureForError()).accept(request, response);
-    }
-
-    public BiConsumer<HttpServletRequest, HttpServletResponse> defaultClosureForError() {
-        return this::launchPage;
-    }
-
-    public String getActionName(HttpServletRequest request) {
-        for (String value : request.getParameterMap().keySet()) {
-            if (value.startsWith("action:")) {
-                return value.split(":")[1];
-            }
-        }
-        throw new IndexOutOfBoundsException();
-    }
-
 }

@@ -8,6 +8,9 @@ import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.*;
 import java.io.IOException;
 
+/**
+ * I am a Servlet in charge of the user authentication.
+ */
 @WebServlet(name = "login", urlPatterns = {"/Login"}, loadOnStartup = 1, initParams = {@WebInitParam(name = "host", value = "localhost"), @WebInitParam(name = "port", value = "8000")})
 public class LoginServlet extends HttpServlet {
 
