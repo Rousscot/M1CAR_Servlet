@@ -1,5 +1,5 @@
-import client.Client;
-import client.WrongInformationException;
+import tpRepertoire.client.Client;
+import tpRepertoire.client.WrongInformationException;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;

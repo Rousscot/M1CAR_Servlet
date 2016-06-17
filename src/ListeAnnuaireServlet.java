@@ -1,6 +1,6 @@
-import client.Client;
-import client.ClientRepertoireList;
-import server.ServerRepertoire;
+import tpRepertoire.client.Client;
+import tpRepertoire.client.ClientRepertoireList;
+import tpRepertoire.server.ServerRepertoire;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
